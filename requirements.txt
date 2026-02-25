@@ -1,0 +1,12 @@
+# Data Manipulation
+pandas
+
+# PDF Extraction (Requires Ghostscript installed on system)
+camelot-py[cv]
+
+# Excel Support
+openpyxl
+
+# Type Hinting & Utilities (Standard Library, but listed for clarity)
+typing
+pathlib
