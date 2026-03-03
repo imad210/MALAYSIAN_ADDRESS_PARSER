@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "malaysian-address-parser"
+version = "0.1.0"
+description = "Deterministic, offline Malaysian address parser (A1/A2/A3/Postcode/State) for messy real-world datasets."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Imaduddin"}]
+keywords = ["malaysia", "address", "parser", "normalization", "postcode", "data-cleaning"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+# Core is stdlib-only (fast, offline)
+dependencies = []
+
+[project.optional-dependencies]
+excel = ["pandas>=2.0.0", "openpyxl>=3.1.0"]
+pdf = ["pandas>=2.0.0", "camelot-py[cv]>=0.11.0"]
+dev = ["pytest>=7.4.0", "ruff>=0.5.0"]
+
+[project.scripts]
+malaysian-address-parser = "malaysian_address_parser.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

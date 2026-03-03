@@ -1,352 +1,247 @@
-# MALAYSIAN_ADDRESS_PARSER
+![CI](https://github.com/imad210/MALAYSIAN_ADDRESS_PARSER/actions/workflows/ci.yml/badge.svg)
 
-A modular Python tool for extracting, cleaning, and normalizing Malaysian addresses.
+# Malaysian Address Parser
 
-This system is specifically designed to handle common Malaysian address formats such as:
+Deterministic, rule-based Malaysian address normalization engine built for messy real-world datasets.
 
-* Lot / PT numbers
-* Taman
-* Kampung
-* Seksyen
-* Bandar / Mukim
-* Mixed-format Excel exports
-
-The classifier splits raw address strings into standardized components:
-
+This package extracts and standardizes Malaysian address strings into structured components:
 ```
-A1 | A2 | A3 | POSTCODE | STATE
+ALAMAT1 | ALAMAT2 | ALAMAT3 | POSTCODE | STATE
 ```
+
+Designed specifically for:
+
+- Noisy Excel exports
+- Local council datasets
+- Mixed-format government records
+- Inconsistent commas & whitespace
+- Postcode false positives (LOT/PT/NO patterns)
 
 ---
 
-# 📂 Project Structure
+# ✨ Features
 
-```
-MALAYSIAN_ADDRESS_PARSER/
-│
-├── data/                         # Input & output files (CSV / Excel)
-│
-├── scripts/
-│   ├── classifier.py             # Main entry point for classification logic
-│   ├── alamat_splitter.py        # Splits address prefix into A1 (Unit/Street) & A2 (Area)
-│   ├── postcode_state_extractor.py # Extracts postcode & Malaysian state
-│   ├── pre_cleaner.py            # Text standardization & whitespace cleanup
-│   ├── normalizer.py             # Final formatting and output cleanup
-│   ├── extract_pdf.py            # Extracts tabular data from PDF (MPKulai dataset use-case)
-│   ├── main_driver_cukai.py      # Batch processor for tax (Cukai) files
-│   └── main_driver_penjaja.py    # Batch processor for hawker/license files
-│
-├── .gitignore
-└── README.md
-```
+- ✅ Rule-based (no ML dependency)
+- ✅ Offline-capable
+- ✅ Canonical Malaysian state mapping
+- ✅ False-positive postcode protection
+- ✅ MELAKA TENGAH special case handling
+- ✅ CLI tool
+- ✅ Excel batch processing
+- ✅ Unit-tested (pytest)
+- ✅ CI-enabled (GitHub Actions)
 
 ---
 
-# 🚀 Getting Started
+# 📦 Installation
 
-## ✅ Prerequisites
-
-* Python 3.10+
-* pandas
-* camelot (for PDF extraction)
-* openpyxl (for Excel processing)
-
----
-
-## 📦 Installation
-
-To install these dependencies, run the following command in your terminal:
-
+## From PyPI (if published)
 ```bash
-pip install -r requirements.txt
+pip install malaysian-address-parser
 ```
 
-or 
-
+## Local Development
 ```bash
-pip install pandas camelot-py[cv] openpyxl
+pip install -e ".[dev,excel]"
 ```
 
-If using Camelot for PDF extraction, ensure:
+Optional extras:
 
-* Ghostscript is installed on your system
-* OpenCV dependencies are available
-
----
-
-# 🛠 Usage
+* `[excel]` → Excel processing (pandas + openpyxl)
+* `[pdf]` → PDF extraction (camelot)
+* `[dev]` → pytest + ruff
 
 ---
 
-## 1️⃣ Extracting Data from PDF
+# 🚀 Usage
 
-If your raw dataset is in PDF format (e.g., MPKulai license list), use:
+---
 
+## 1️⃣ Parse Single Address (CLI)
 ```bash
-python scripts/extract_pdf.py
+malaysian-address-parser parse-one "Lot 123, Jalan Bunga, Taman Mawar, 70400 Seremban, Negeri Sembilan"
 ```
 
-This script uses Camelot to extract tabular data into structured CSV/Excel format before classification.
+Pretty output:
+```bash
+malaysian-address-parser parse-one "..." --pretty
+```
+
+### Example Output
+```json
+{
+  "alamat1": "LOT 123 JALAN BUNGA",
+  "alamat2": "TAMAN MAWAR",
+  "alamat3": "SEREMBAN",
+  "poskod": "70400",
+  "negeri": "NEGERI SEMBILAN DARUL KHUSUS"
+}
+```
 
 ---
 
-## 2️⃣ Running the Address Classifier (Single Address)
+## 2️⃣ Parse Excel File
+```bash
+malaysian-address-parser parse-excel input.xlsx --col address --out output.xlsx
+```
 
-The system classifies addresses into:
+### Options
 
-| Component        | Description                          |
-| ---------------- | ------------------------------------ |
-| **ALAMAT1 (A1)** | Unit, Lot, PT, Street name           |
-| **ALAMAT2 (A2)** | Housing Area (Taman), Kampung, etc.  |
-| **ALAMAT3 (A3)** | City / Sub-district (Bandar / Mukim) |
-| **POSTCODE**     | 5-digit Malaysian postcode           |
-| **STATE**        | Full canonical state name            |
+| Flag                 | Description                   |
+| -------------------- | ----------------------------- |
+| `--sheet`            | Sheet name or index           |
+| `--col`              | Column containing raw address |
+| `--out`              | Output file (.xlsx or .csv)   |
+| `--limit`            | Limit rows (debug mode)       |
+| `--no-keep-original` | Output only parsed fields     |
 
-### Example Implementation
+Example:
+```bash
+malaysian-address-parser parse-excel data/input.xlsx --col SEMASA_ALAMAT_RAW --out results/parsed.xlsx
+```
 
+Supports:
+
+* Relative paths
+* Absolute paths
+* Auto-creates output directory if missing
+
+---
+
+# 🧠 Python API Usage
 ```python
-from scripts.classifier import classify_address_v2
+from malaysian_address_parser import classify_address_v2
 
 address = "Lot 123, Jalan Bunga, Taman Mawar, 70400 Seremban, Negeri Sembilan"
 
 a1, a2, a3, poskod, negeri = classify_address_v2(address)
 
-print(f"Street: {a1}")
-print(f"Area: {a2}")
-print(f"City: {a3}")
-print(f"Postcode: {poskod}")
-print(f"State: {negeri}")
-```
-
-### Expected Output
-
-```
-Street: LOT 123 JALAN BUNGA
-Area: TAMAN MAWAR
-City: SEREMBAN
-Postcode: 70400
-State: NEGERI SEMBILAN
+print(a1)
+print(a2)
+print(a3)
+print(poskod)
+print(negeri)
 ```
 
 ---
 
-## 3️⃣ Batch Normalization (Excel Files)
-
-To process entire datasets:
-
-### For Assessment / Tax Files:
-
-```bash
-python scripts/main_driver_cukai.py
+# 📂 Project Structure
 ```
-
-### For Hawker / Business License Files:
-
-```bash
-python scripts/main_driver_penjaja.py
+.
+├── src/
+│   └── malaysian_address_parser/
+│       ├── classifier.py
+│       ├── alamat_splitter.py
+│       ├── postcode_state_extractor.py
+│       ├── pre_cleaner.py
+│       ├── normalizer.py
+│       ├── cli.py
+│       └── excel_runner.py
+│
+├── tests/
+│
+├── .github/workflows/ci.yml
+├── pyproject.toml
+└── README.md
 ```
-
-Update the `input_xlsx` path inside:
-
-```python
-if __name__ == "__main__":
-```
-
-Block within each driver script.
 
 ---
 
-# 🧠 Core Logic Highlights
+# 🔍 Core Logic Highlights
+
+## Prefix Splitting
+
+Splits prefix into:
+
+* **ALAMAT1 (A1)** → Unit + Street
+* **ALAMAT2 (A2)** → Area (Taman, Kampung, PPR, etc.)
+
+Uses keyword-based heuristics instead of naive comma splitting.
 
 ---
 
-## 🔹 Prefix Splitting Logic
+## Postcode Detection
 
-Implemented inside:
-
+* Detects valid 5-digit Malaysian postcodes
+* Ignores false positives like:
 ```
-alamat_splitter.py
-```
-
-Uses:
-
-* `AREA_KEYWORDS` → Taman, Kampung, PPR, etc.
-* `UNIT_KEYWORDS` → Lot, PT, No, HSD, GRN, etc.
-
-This enables intelligent splitting between:
-
-* A1 → Unit + Street
-* A2 → Residential Area
-
-Instead of relying purely on commas.
-
----
-
-## 🔹 Postcode Protection Logic
-
-Implemented inside:
-
-```
-postcode_state_extractor.py
-```
-
-The extractor:
-
-* Identifies valid 5-digit Malaysian postcodes
-* Ignores false positives such as:
-
-```
-PT 12345
 LOT 54321
+PT 12345
 ```
 
-Prevents Lot numbers from being misclassified as postcodes.
+Scoring system prefers postcodes appearing toward the end of address.
 
 ---
 
-## 🔹 State Extraction
+## State Canonicalization
 
-Recognizes all Malaysian states in canonical format, including ceremonial titles such as:
+Recognizes all Malaysian states including ceremonial names:
 
-* SELANGOR DARUL EHSAN
-* PERAK DARUL RIDZUAN
 * JOHOR DARUL TAKZIM
-* KEDAH DARUL AMAN
+* PERAK DARUL RIDZUAN
+* SELANGOR DARUL EHSAN
+* etc.
 
-State names are standardized before final output.
+All states normalized into canonical format.
 
 ---
 
-## 🔹 Special Case Protection
+## Special Case Handling
 
-Includes protection for:
-
+Protected case:
 ```
 MELAKA TENGAH
 ```
 
-Prevents the state name "Melaka" from being incorrectly stripped during city extraction.
-
-This avoids truncation errors such as:
-
-```
-Incorrect → TENGAH
-Correct   → MELAKA TENGAH
-```
+Prevents accidental stripping of "MELAKA" during state extraction.
 
 ---
 
-## 🔹 Pre-cleaning & Normalization
+# 🧪 Testing
 
-Handled by:
-
-* `pre_cleaner.py`
-* `normalizer.py`
-
-Features include:
-
-* Removing newlines
-* Collapsing repeated commas
-* Standardizing whitespace
-* Converting output to uppercase
-* Final trimming and formatting
-
----
-
-# 📊 Output Format Summary
-
-| Field    | Meaning              | Example             |
-| -------- | -------------------- | ------------------- |
-| A1       | Unit + Street        | LOT 123 JALAN BUNGA |
-| A2       | Residential Area     | TAMAN MAWAR         |
-| A3       | City / Mukim         | SEREMBAN            |
-| POSTCODE | 5-digit code         | 70400               |
-| STATE    | Canonical State Name | NEGERI SEMBILAN     |
-
----
-
-# 🎯 Design Philosophy
-
-This classifier is:
-
-* Rule-based (not ML-dependent)
-* Deterministic
-* Offline-capable
-* Optimized for Malaysian address structures
-* Designed for messy real-world government datasets
-* Suitable for large Excel files (100k+ rows)
-
----
-
-# 🏢 Intended Use Cases
-
-* PBT License Cleaning
-* Local Council Databases
-* Cukai Taksiran Records
-* Penjaja License Records
-* Asset Registers
-* CRM Normalization
-* Data Migration Projects
-
----
-
-# 🔧 Customization
-
-If address splits are incorrect:
-
-### Update area detection:
-
-Modify:
-
-```
-AREA_KEYWORDS
+Run tests locally:
+```bash
+pytest -q
 ```
 
-Inside:
+CI runs tests across:
 
-```
-alamat_splitter.py
-```
-
----
-
-### Adjust postcode detection logic:
-
-Modify scoring rules in:
-
-```
-postcode_state_extractor.py
-```
+* Python 3.10
+* Python 3.11
+* Python 3.12
+* Python 3.13
 
 ---
 
-# ⚠️ Known Limitations
+# ⚠ Known Limitations
 
-* Extremely ambiguous rural addresses may require manual review.
-* Mukim-level validation is not yet cross-checked against official gazette lists.
-* Does not currently validate postcode-to-state consistency.
+* Extremely ambiguous rural addresses may require manual review
+* No postcode ↔ state validation yet
+* No gazette-level mukim verification
+* Fully rule-based (no ML fallback)
 
 ---
 
-# 🔮 Future Enhancements
+# 🔮 Roadmap
 
-* Mukim validation layer
-* Postcode ↔ State cross-verification
-* CLI wrapper tool
+* Postcode ↔ State validation layer
+* Mukim-level canonical validation
+* Performance benchmarking (rows/sec)
+* Parallel Excel processing
 * Docker packaging
-* Web interface
-* Logging module for audit tracking
+* Web interface wrapper
 
 ---
 
-# 🤝 Contribution
+# 🎯 Intended Use Cases
 
-Pull requests are welcome for:
-
-* Additional edge case handling
-* Improved splitting heuristics
-* Performance optimization
-* Enhanced state/postcode validation
+* Local authority datasets
+* Asset registers
+* CRM normalization
+* Data migration projects
+* License databases
+* Cukai taksiran records
+* Address standardization pipelines
 
 ---
 
@@ -356,18 +251,7 @@ MIT
 
 ---
 
-# 📌 Maintainer Notes
+# Maintainer
 
-This project was designed specifically for Malaysian local authority datasets and real-world Excel exports where:
-
-* Commas are inconsistent
-* Postcodes are misplaced
-* State titles are duplicated
-* Lot numbers resemble postcodes
-
-The logic prioritizes Malaysian addressing behavior over generic international formatting.
-
----
-
-**MALAYSIAN_ADDRESS_PARSER**
-Structured Malaysian Address Normalization — Built for Real Data.
+Imaduddin  
+Built for real Malaysian address data.
