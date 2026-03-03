@@ -1,4 +1,6 @@
-![CI](https://github.com/imad210/MALAYSIAN_ADDRESS_PARSER/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/imad210/malaysian-address-parser/actions/workflows/ci.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/malaysian-address-parser)
+![License](https://img.shields.io/github/license/imad210/malaysian-address-parser)
 
 # Malaysian Address Parser
 
