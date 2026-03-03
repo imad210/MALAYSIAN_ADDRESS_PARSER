@@ -1,4 +1,4 @@
-name: Release (build + GitHub Release)
+name: Release (build + GitHub Release + PyPI)
 
 on:
   push:
@@ -7,10 +7,12 @@ on:
 
 permissions:
   contents: write
+  id-token: write   # IMPORTANT for Trusted Publishing (OIDC)
 
 jobs:
-  build-and-release:
+  build-release-publish:
     runs-on: ubuntu-latest
+    environment: pypi
 
     steps:
       - name: Checkout
@@ -36,3 +38,6 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+
+      - name: Publish to PyPI (Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
