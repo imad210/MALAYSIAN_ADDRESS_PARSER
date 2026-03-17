@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "malaysian-address-parser"
-version = "0.1.1"
+version = "0.1.5"
 description = "Deterministic, offline Malaysian address parser (A1/A2/A3/Postcode/State) for messy real-world datasets."
 readme = "README.md"
 requires-python = ">=3.10"
