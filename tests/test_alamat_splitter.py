@@ -13,3 +13,9 @@ def test_split_prefix_empty():
     a1, a2 = split_prefix_into_a1_a2("")
     assert a1 == ""
     assert a2 == ""
+
+
+def test_split_prefix_supports_jln_abbreviation():
+    a1, a2 = split_prefix_into_a1_a2("62 JLN MELUR, TAMAN MELUR")
+    assert a1 == "62 JLN MELUR"
+    assert a2 == "TAMAN MELUR"

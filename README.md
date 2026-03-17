@@ -84,7 +84,7 @@ malaysian-address-parser parse-one "..." --pretty
 
 ## 2️⃣ Parse Excel File
 ```bash
-malaysian-address-parser parse-excel input.xlsx --col address --out output.xlsx
+malaysian-address-parser parse-excel input.xlsx --out output.xlsx
 ```
 
 ### Options
@@ -92,14 +92,19 @@ malaysian-address-parser parse-excel input.xlsx --col address --out output.xlsx
 | Flag                 | Description                   |
 | -------------------- | ----------------------------- |
 | `--sheet`            | Sheet name or index           |
-| `--col`              | Column containing raw address |
+| `--col`              | Optional source column. If omitted, auto-detect all `ALAMAT_PENUH*` columns |
 | `--out`              | Output file (.xlsx or .csv)   |
 | `--limit`            | Limit rows (debug mode)       |
 | `--no-keep-original` | Output only parsed fields     |
 
 Example:
 ```bash
-malaysian-address-parser parse-excel data/input.xlsx --col SEMASA_ALAMAT_RAW --out results/parsed.xlsx
+malaysian-address-parser parse-excel data/input.xlsx --out results/parsed.xlsx
+```
+
+Process only one specific source column:
+```bash
+malaysian-address-parser parse-excel data/input.xlsx --col ALAMAT_PENUH_ASET --out results/parsed.xlsx
 ```
 
 Supports:
@@ -107,6 +112,31 @@ Supports:
 * Relative paths
 * Absolute paths
 * Auto-creates output directory if missing
+
+### Auto-mapped Excel output
+
+If your sheet contains:
+```text
+ALAMAT_PENUH_PEMILIK
+ALAMAT_PENUH_ASET
+```
+
+the parser will automatically write into:
+```text
+ALAMAT1_PEMILIK | ALAMAT2_PEMILIK | ALAMAT3_PEMILIK | POSKOD_PEMILIK | NEGERI_PEMILIK
+ALAMAT1_ASET    | ALAMAT2_ASET    | ALAMAT3_ASET    | POSKOD_ASET    | NEGERI_ASET
+```
+
+Existing target columns are replaced and reinserted next to the source
+column, so the sheet layout stays aligned with the original dataset.
+
+Field rules:
+
+* **ALAMAT1** -> unit / blok / lot / jalan (`NO`, `UNIT`, `BLOK`, `JALAN`, `JLN`, `LORONG`, `PERSIARAN`)
+* **ALAMAT2** -> taman / kampung / flat / kondo / apartment style area
+* **ALAMAT3** -> selebihnya locality text sahaja
+* **POSKOD** -> postcode sahaja
+* **NEGERI** -> canonical state sahaja
 
 ---
 

@@ -2,10 +2,26 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from .alamat_splitter import split_prefix_into_a1_a2
+from .alamat_splitter import split_prefix_into_a1_a2, split_prefix_into_components
 from .normalizer import normalize_component
-from .postcode_state_extractor import extract_alamat3, extract_postcode_idx, extract_state
+from .postcode_state_extractor import (
+    extract_alamat3,
+    extract_postcode_idx,
+    extract_state,
+)
 from .pre_cleaner import clean_text
+
+
+def _split_state_from_tail(text: str) -> Tuple[str, str]:
+    tokens = [token.strip() for token in text.split(",") if token.strip()]
+    if not tokens:
+        return "", ""
+
+    last_token = tokens[-1]
+    negeri = extract_state(last_token)
+    if negeri:
+        return ",".join(tokens[:-1]).strip(" ,"), negeri
+    return text, ""
 
 
 def classify_address_v2(full_text: str) -> Tuple[str, str, str, str, str]:
@@ -20,7 +36,8 @@ def classify_address_v2(full_text: str) -> Tuple[str, str, str, str, str]:
     """
     cleaned = clean_text(full_text)
     poskod, p_idx = extract_postcode_idx(cleaned)
-    negeri = extract_state(cleaned)
+    prefix_without_state, tail_state = _split_state_from_tail(cleaned)
+    negeri = extract_state(cleaned) or tail_state
 
     a1 = a2 = a3_final = ""
 
@@ -30,22 +47,14 @@ def classify_address_v2(full_text: str) -> Tuple[str, str, str, str, str]:
 
         a1, a2 = split_prefix_into_a1_a2(prefix)
 
-        # If alamat3 extraction failed, try use "last token" as bandar/mukim (only if it's not unit/jalan)
+        # If postcode tail has no bandar/mukim token, use leftover prefix tokens that are neither road nor area.
         if not a3_hujung:
-            prefix_tokens = [t.strip() for t in prefix.split(",") if t.strip()]
-            if prefix_tokens:
-                last_token = prefix_tokens[-1].strip()
-                if not any(k in last_token.upper() for k in ["JALAN", "LOT", "PT", "NO"]):
-                    a3_final = last_token
-                    new_prefix = ",".join(prefix_tokens[:-1])
-                    a1, a2 = split_prefix_into_a1_a2(new_prefix)
-                else:
-                    a3_final = ""
+            a1, a2, a3_candidate = split_prefix_into_components(prefix)
+            a3_final = a3_candidate
         else:
             a3_final = a3_hujung
     else:
-        a1, a2 = split_prefix_into_a1_a2(cleaned)
-        a3_final = ""
+        a1, a2, a3_final = split_prefix_into_components(prefix_without_state)
 
     # Final cleanup / formatting (consistent output)
     return (

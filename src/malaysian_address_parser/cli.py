@@ -34,7 +34,11 @@ def build_parser() -> argparse.ArgumentParser:
     excel = sub.add_parser("parse-excel", help="Parse an Excel file column")
     excel.add_argument("input", type=Path, help="Input .xlsx file")
     excel.add_argument("--sheet", default=0, help="Sheet name or index (default: 0)")
-    excel.add_argument("--col", required=True, help="Column name containing address text")
+    excel.add_argument(
+        "--col",
+        default=None,
+        help="Optional address column. If omitted, auto-detect all ALAMAT_PENUH* columns.",
+    )
     excel.add_argument("--out", type=Path, required=True, help="Output .xlsx/.xlsm or .csv")
     excel.add_argument("--limit", type=int, default=None, help="Limit rows (debugging)")
     excel.add_argument(

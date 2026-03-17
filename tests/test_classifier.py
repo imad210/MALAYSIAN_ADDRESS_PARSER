@@ -19,7 +19,9 @@ def test_classify_without_postcode():
 
     assert poskod == ""
     assert negeri == "KELANTAN DARUL NAIM"
-    assert a1 != "" or a2 != ""
+    assert a1 == "PT 1234"
+    assert a2 == "KG ABC"
+    assert a3 == "PASIR MAS"
 
 
 def test_classify_melaka_tengah_case():
@@ -38,3 +40,14 @@ def test_output_is_uppercase_and_trimmed():
     assert a1 == a1.strip(" ,")
     assert poskod == "16150"
     assert negeri == "KELANTAN DARUL NAIM"
+
+
+def test_classify_asset_style_address_outputs_expected_slots():
+    text = "62 JLN MELUR, TAMAN MELUR, 68000, AMPANG"
+    a1, a2, a3, poskod, negeri = classify_address_v2(text)
+
+    assert a1 == "62 JLN MELUR"
+    assert a2 == "TAMAN MELUR"
+    assert a3 == "AMPANG"
+    assert poskod == "68000"
+    assert negeri == ""
